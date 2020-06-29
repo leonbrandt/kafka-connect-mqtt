@@ -7,6 +7,8 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
+
 
 /**
  * Copyright 2016 Evokly S.A.
@@ -16,7 +18,7 @@ import org.slf4j.LoggerFactory;
 public class DumbProcessor implements MqttMessageProcessor {
     private static final Logger log = LoggerFactory.getLogger(DumbProcessor.class);
     private MqttMessage mMessage;
-    private Object mTopic;
+    private String mTopic;
 
     @Override
     public MqttMessageProcessor process(String topic, MqttMessage message) {
@@ -28,8 +30,9 @@ public class DumbProcessor implements MqttMessageProcessor {
 
     @Override
     public SourceRecord[] getRecords(String kafkaTopic) {
-        return new SourceRecord[]{new SourceRecord(null, null, kafkaTopic, null,
+        String actualTopic = mTopic.replace("/", "_");
+        return new SourceRecord[]{new SourceRecord(null, null, actualTopic, null,
                 Schema.STRING_SCHEMA, mTopic,
-                Schema.BYTES_SCHEMA, mMessage.getPayload())};
+                Schema.STRING_SCHEMA, new String(mMessage.getPayload(), StandardCharsets.UTF_8))};
     }
 }
