@@ -75,11 +75,6 @@ task copyRuntimeLibs(type: Copy) {
     from configurations.runtime
 }
 
-
-plugins {
-    id("maven-publish")
-}
-
 publishing {
     repositories {
         maven {
