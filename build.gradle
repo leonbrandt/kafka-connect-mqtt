@@ -76,19 +76,24 @@ task copyRuntimeLibs(type: Copy) {
 }
 
 
-bintray {
-    user = System.getenv('BINTRAY_USER')
-    key = System.getenv('BINTRAY_KEY')
-    pkg {
-        repo = 'maven'
-        name = 'kafka-connect-mqtt'
-        userOrg = 'evokly'
-        licenses = ['MIT']
-        vcsUrl = 'https://github.com/evokly/kafka-connect-mqtt.git'
-        version {
-            name = '1.0'
-            vcsTag = '1.0'
+plugins {
+    id("maven-publish")
+}
+
+publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/OWNER/REPOSITORY")
+            credentials {
+                username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
+                password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
+            }
         }
-        publications = ['MyPublication']
+    }
+    publications {
+        gpr(MavenPublication) {
+            from(components.java)
+        }
     }
 }
