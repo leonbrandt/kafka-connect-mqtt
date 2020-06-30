@@ -56,7 +56,7 @@ publishing.repositories {
         url = uri("https://maven.pkg.github.com/SmartsquareGmbH/kafka-connect-mqtt")
         credentials {
             username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
-            password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
+            password = project.findProperty("gpr.key") ?: System.getenv("PASSWORD")
         }
     }
 }
