@@ -5,15 +5,6 @@
 
 package com.evokly.kafka.connect.mqtt;
 
-import com.evokly.kafka.connect.mqtt.ssl.SslUtils;
-import com.evokly.kafka.connect.mqtt.util.Version;
-import org.apache.kafka.connect.source.SourceRecord;
-import org.apache.kafka.connect.source.SourceTask;
-import org.eclipse.paho.client.mqttv3.*;
-import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -21,6 +12,21 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import com.evokly.kafka.connect.mqtt.ssl.SslUtils;
+import com.evokly.kafka.connect.mqtt.util.Version;
+import org.apache.kafka.connect.source.SourceRecord;
+import org.apache.kafka.connect.source.SourceTask;
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
+import org.eclipse.paho.client.mqttv3.MqttCallback;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * MqttSourceTask is a Kafka Connect SourceTask implementation that reads
@@ -138,11 +144,20 @@ public class MqttSourceTask extends SourceTask implements MqttCallback {
 	 *
 	 * @param topic   name of the topic on the message was published to
 	 * @param message the actual message.
-	 * @throws Exception if a terminal error has occurred, and the client should be
-	 *                   shut down.
 	 */
-	@Override public void messageArrived(String topic, MqttMessage message) throws Exception {
+	@Override public void messageArrived(String topic, MqttMessage message) {
 		log.debug("[{}] New message on '{}' arrived.", mMqttClientId, topic);
+		String legalChars = "[a-zA-Z0-9/_\\-]";
+		int maxNameLength = 249;
+		if (topic.length() > maxNameLength) {
+			log.warn("Topic [{}] exceeds max length of {} characters!", topic, maxNameLength);
+			return;
+		}
+		Matcher matcher = Pattern.compile(legalChars + "+").matcher(topic);
+		if (!matcher.matches()) {
+			log.warn("Topic [{}] contains illegal characters, only [{}] are allowed!", topic, legalChars);
+			return;
+		}
 
 		this.mQueue.add(mConfig.getConfiguredInstance(MqttSourceConstant.MESSAGE_PROCESSOR, MqttMessageProcessor.class).process(topic, message));
 	}
